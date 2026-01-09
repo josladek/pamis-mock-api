@@ -17,12 +17,12 @@ app.get('/pis/api/priv/user/cis/ciselnik-list-upvs', (req, res) => {
 
   // Check if the requested codelist type matches
   if (typCiselnika === 'CL000024_OKRES') {
-    // Return mock data in expected format
+    // Return mock data in DataTables format matching PAMIS API
     res.json({
-      success: true,
-      data: okresyData,
-      count: okresyData.length,
-      typCiselnika: typCiselnika
+      sEcho: "",
+      iTotalRecords: okresyData.length.toString(),
+      iTotalDisplayRecords: okresyData.length.toString(),
+      aaData: okresyData
     });
   } else {
     // Return error for unsupported codelist types
