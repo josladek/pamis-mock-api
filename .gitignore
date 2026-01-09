@@ -2,5 +2,8 @@ node_modules/
 *.log
 .env
 response.json
+reponse_*.txt
+cookies.txt
+.claude/
 
 .vercel

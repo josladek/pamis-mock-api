@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const okresyData = require('./mockData');
+const obceData = require('./mockDataObce');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,18 +18,21 @@ app.get('/pis/api/priv/user/cis/ciselnik-list-upvs', (req, res) => {
 
   // Check if the requested codelist type matches
   if (typCiselnika === 'CL000024_OKRES') {
-    // Return mock data in DataTables format matching PAMIS API
+    // Return mock data for districts (okresy) in DataTables format
     res.json({
       sEcho: "",
       iTotalRecords: okresyData.length.toString(),
       iTotalDisplayRecords: okresyData.length.toString(),
       aaData: okresyData
     });
+  } else if (typCiselnika === 'CL000025_OBEC') {
+    // Return mock data for municipalities (obce) in DataTables format
+    res.json(obceData);
   } else {
     // Return error for unsupported codelist types
     res.status(400).json({
       success: false,
-      error: `Unsupported codelist type: ${typCiselnika}. Only CL000024_OKRES is available in this mock.`
+      error: `Unsupported codelist type: ${typCiselnika}. Supported types: CL000024_OKRES, CL000025_OBEC`
     });
   }
 });
@@ -42,12 +46,16 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'PAMIS Mock API',
-    description: 'Mock API for PAMIS district codelist (CL000024_OKRES)',
+    description: 'Mock API for PAMIS codelists (CL000024_OKRES, CL000025_OBEC)',
     endpoints: {
-      codelist: '/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES',
+      districts: '/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES',
+      municipalities: '/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000025_OBEC',
       health: '/health'
     },
-    usage: 'GET /pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES'
+    available_codelists: {
+      'CL000024_OKRES': '78 Slovak districts',
+      'CL000025_OBEC': '2928 Slovak municipalities'
+    }
   });
 });
 
@@ -55,9 +63,11 @@ app.listen(PORT, () => {
   console.log(`\n🚀 PAMIS Mock API server is running!`);
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`\n📋 Available endpoints:`);
-  console.log(`   GET http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES`);
+  console.log(`   GET http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES (78 districts)`);
+  console.log(`   GET http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000025_OBEC (2928 municipalities)`);
   console.log(`   GET http://localhost:${PORT}/health`);
-  console.log(`\n💡 Test with: curl "http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES"\n`);
+  console.log(`\n💡 Test districts: curl "http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES"`);
+  console.log(`💡 Test municipalities: curl "http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000025_OBEC"\n`);
 });
 
 module.exports = app;
