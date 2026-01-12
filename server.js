@@ -3,6 +3,7 @@ const cors = require('cors');
 const okresyData = require('./mockData');
 const obceData = require('./mockDataObce');
 const katastralneData = require('./mockDataKatastralne');
+const uzpfData = require('./mockDataUzpf');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,6 +47,24 @@ app.get('/pis/api/priv/user/cis/ciselnik-list-upvs', (req, res) => {
   }
 });
 
+// ÚZPF validation endpoint
+app.post('/pis/api/priv/user/eform-support/valid-cislo-uzpf', (req, res) => {
+  const { cisloUzpf, druhNkp, okresKod } = req.body;
+
+  // Check if ÚZPF number exists in mock data
+  if (uzpfData[cisloUzpf]) {
+    // Return valid ÚZPF data
+    res.json(uzpfData[cisloUzpf]);
+  } else {
+    // Return invalid response
+    res.json({
+      cisloUzpf: cisloUzpf,
+      valid: false,
+      err: "Neznáme číslo ÚZPF"
+    });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'PAMIS Mock API is running' });
@@ -55,17 +74,28 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'PAMIS Mock API',
-    description: 'Mock API for PAMIS codelists (CL000024_OKRES, CL000025_OBEC, CL000026_KATASTRALNE_UZEMIE)',
+    description: 'Mock API for PAMIS codelists and ÚZPF validation',
     endpoints: {
-      districts: '/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES',
-      municipalities: '/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000025_OBEC',
-      cadastral_territories: '/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000026_KATASTRALNE_UZEMIE',
-      health: '/health'
+      districts: 'GET /pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES',
+      municipalities: 'GET /pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000025_OBEC',
+      cadastral_territories: 'GET /pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000026_KATASTRALNE_UZEMIE',
+      uzpf_validation: 'POST /pis/api/priv/user/eform-support/valid-cislo-uzpf',
+      health: 'GET /health'
     },
     available_codelists: {
       'CL000024_OKRES': '78 Slovak districts',
       'CL000025_OBEC': '2928 Slovak municipalities',
       'CL000026_KATASTRALNE_UZEMIE': '3559 Slovak cadastral territories'
+    },
+    uzpf_validation: {
+      method: 'POST',
+      endpoint: '/pis/api/priv/user/eform-support/valid-cislo-uzpf',
+      payload_example: {
+        cisloUzpf: "1",
+        druhNkp: "NNKP",
+        okresKod: "101"
+      },
+      available_test_numbers: ["1", "2", "100", "500", "1000", "2000", "5000", "10000"]
     }
   });
 });
@@ -77,10 +107,10 @@ app.listen(PORT, () => {
   console.log(`   GET http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES (78 districts)`);
   console.log(`   GET http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000025_OBEC (2928 municipalities)`);
   console.log(`   GET http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000026_KATASTRALNE_UZEMIE (3559 cadastral territories)`);
+  console.log(`   POST http://localhost:${PORT}/pis/api/priv/user/eform-support/valid-cislo-uzpf (ÚZPF validation)`);
   console.log(`   GET http://localhost:${PORT}/health`);
-  console.log(`\n💡 Test districts: curl "http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000024_OKRES"`);
-  console.log(`💡 Test municipalities: curl "http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000025_OBEC"`);
-  console.log(`💡 Test cadastral territories: curl "http://localhost:${PORT}/pis/api/priv/user/cis/ciselnik-list-upvs?typCiselnika=CL000026_KATASTRALNE_UZEMIE"\n`);
+  console.log(`\n💡 Test ÚZPF validation (valid): curl -X POST http://localhost:${PORT}/pis/api/priv/user/eform-support/valid-cislo-uzpf -H "Content-Type: application/json" -d "{\\"cisloUzpf\\":\\"1\\",\\"druhNkp\\":\\"NNKP\\",\\"okresKod\\":\\"101\\"}"`);
+  console.log(`💡 Test ÚZPF validation (invalid): curl -X POST http://localhost:${PORT}/pis/api/priv/user/eform-support/valid-cislo-uzpf -H "Content-Type: application/json" -d "{\\"cisloUzpf\\":\\"99999\\",\\"druhNkp\\":\\"NNKP\\",\\"okresKod\\":\\"101\\"}"\n`);
 });
 
 module.exports = app;
